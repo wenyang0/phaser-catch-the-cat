@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>圈小猫 - Catch The Cat</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --avocado-light: #A8E6CF;
+            --avocado-medium: #88D4AB;
+            --avocado-dark: #6BC4A6;
+            --avocado-accent: #4CAF93;
+            --avocado-shadow: #2E8B57;
+            --text-dark: #2D5016;
+            --text-light: #5A7C5A;
+            --light-bg: #F5FFFA;
+            
+            /* 夜间模式变量 */
+            --night-bg: #1a2f1a;
+            --night-text: #c8e6c9;
+            --night-accent: #4CAF93;
+            --night-shadow: #1b5e20;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--avocado-light) 0%, var(--avocado-medium) 50%, var(--avocado-dark) 100%);
+            color: var(--text-dark);
+            font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            transition: background 0.5s ease;
+        }
+
+        body.night-mode {
+            background: linear-gradient(135deg, #0d1f0d 0%, #1a2f1a 50%, #2a3e2a 100%);
+            color: var(--night-text);
+        }
+
+        /* 动态背景 */
+        #dynamic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            transition: opacity 0.5s ease;
+        }
+
+        /* 主题切换按钮 */
+        .top-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .theme-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-dark);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .theme-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        body.night-mode .theme-btn {
+            background: rgba(30, 50, 30, 0.8);
+            color: var(--night-text);
+        }
+
+        /* 修复GitHub角标位置 - 改为固定定位 */
+        .github-corner {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 1000;
+            transform: scale(0.8);
+        }
+
+        .github-corner svg {
+            fill: var(--avocado-accent);
+            color: var(--light-bg);
+            transition: all 0.3s ease;
+        }
+
+        .github-corner:hover svg {
+            fill: var(--avocado-shadow);
+            transform: scale(1.1);
+        }
+
+        body.night-mode .github-corner svg {
+            fill: var(--night-accent);
+            color: var(--night-bg);
+        }
+
+        /* 头部样式 */
+        .game-header {
+            text-align: center;
+            padding: 1.5rem 1rem 1rem;
+            position: relative;
+        }
+
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 0px var(--avocado-light);
+            position: relative;
+            display: inline-block;
+        }
+
+        body.night-mode .game-title {
+            color: var(--night-text);
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 10%;
+            width: 80%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--avocado-accent), transparent);
+            border-radius: 2px;
+        }
+
+        body.night-mode .game-title::after {
+            background: linear-gradient(90deg, transparent, var(--night-accent), transparent);
+        }
+
+        .game-subtitle {
+            color: var(--text-light);
+            font-size: 1rem;
+            max-width: 600px;
+            margin: 1rem auto;
+            line-height: 1.6;
+            padding: 0 1rem;
+        }
+
+        body.night-mode .game-subtitle {
+            color: #a5d6a7;
+        }
+
+        /* 游戏容器 - 移动端优化 */
+        #game-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 完全移除触摸反馈 */
+        #catch-the-cat {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(46, 139, 87, 0.25);
+            border: 3px solid var(--avocado-accent);
+            background: rgba(255, 255, 255, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 移动端高度自适应 */
+            min-height: 60vh;
+            max-height: 70vh;
+            aspect-ratio: 1 / 1;
+            position: relative;
+        }
+
+        body.night-mode #catch-the-cat {
+            border: 3px solid var(--night-accent);
+            background: rgba(40, 60, 40, 0.85);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 移除所有active状态 */
+        #catch-the-cat:active {
+            opacity: 1 !important;
+            transform: none !important;
+        }
+
+        /* 强制画布正确尺寸 */
+        #catch-the-cat canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+            /* 防止画布被压缩 */
+            object-fit: contain;
+            width: 100% !important;
+            height: auto !important;
+            max-width: 100% !important;
+            touch-action: none !important;
+        }
+
+        /* 游戏控制面板 - 移动端优化 */
+        .game-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            border: 2px dashed var(--avocado-medium);
+            box-shadow: 0 4px 12px rgba(46, 139, 87, 0.15);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        body.night-mode .game-controls {
+            background: rgba(40, 60, 40, 0.8);
+            border: 2px dashed var(--night-accent);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem 0.8rem;
+            background: rgba(168, 230, 207, 0.3);
+            border-radius: 10px;
+            min-width: 70px;
+        }
+
+        body.night-mode .stat-item {
+            background: rgba(76, 175, 147, 0.2);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--avocado-shadow);
+        }
+
+        body.night-mode .stat-value {
+            color: var(--night-accent);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+
+        body.night-mode .stat-label {
+            color: #a5d6a7;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.2rem;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, var(--avocado-medium), var(--avocado-accent));
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(46, 139, 87, 0.2);
+            position: relative;
+            overflow: hidden;
+            /* 移动端触摸优化 */
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(46, 139, 87, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        body.night-mode .btn {
+            background: linear-gradient(45deg, #2e7d32, #4CAF93);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 游戏剧情和说明 - 移动端优化 */
+        .game-story {
+            margin-top: 1.5rem;
+            padding: 1.2rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            border: 2px solid var(--avocado-medium);
+            box-shadow: 0 4px 12px rgba(46, 139, 87, 0.15);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        body.night-mode .game-story {
+            background: rgba(40, 60, 40, 0.8);
+            border: 2px solid var(--night-accent);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .story-title {
+            color: var(--avocado-shadow);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.night-mode .story-title {
+            color: var(--night-accent);
+        }
+
+        .story-title::before {
+            content: '🌿';
+            font-size: 1.2rem;
+        }
+
+        .story-content {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .story-content p {
+            margin-bottom: 0.8rem;
+            text-indent: 2em;
+        }
+
+        .instructions {
+            margin-top: 1.2rem;
+            padding-top: 1.2rem;
+            border-top: 1px dashed var(--avocado-accent);
+        }
+
+        body.night-mode .instructions {
+            border-top: 1px dashed var(--night-accent);
+        }
+
+        .instructions h3 {
+            color: var(--avocado-shadow);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        body.night-mode .instructions h3 {
+            color: var(--night-accent);
+        }
+
+        .instructions h3::before {
+            content: '🎯';
+        }
+
+        .instructions ul {
+            padding-left: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .instructions li {
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        /* 页脚 */
+        footer {
+            margin-top: 2rem;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            color: var(--text-light);
+            position: relative;
+        }
+
+        body.night-mode footer {
+            color: #a5d6a7;
+        }
+
+        .credit {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .credit::before {
+            content: '❤️';
+        }
+
+        /* 响应式设计 - 优化移动端显示 */
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2.2rem;
+            }
+            
+            .game-controls {
+                flex-direction: column;
+                gap: 1.2rem;
+            }
+            
+            .stats {
+                width: 100%;
+                justify-content: space-around;
+            }
+            
+            .buttons {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .github-corner {
+                transform: scale(0.7);
+            }
+            
+            #catch-the-cat {
+                min-height: 50vh;
+                max-height: 60vh;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-title {
+                font-size: 1.8rem;
+            }
+            
+            .game-subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .stat-value {
+                font-size: 1.3rem;
+            }
+            
+            .btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .github-corner {
+                transform: scale(0.6);
+            }
+            
+            #catch-the-cat {
+                min-height: 45vh;
+                max-height: 55vh;
+                border-radius: 12px;
+            }
+            
+            .game-header {
+                padding: 1rem 0.5rem 0.5rem;
+            }
+            
+            .game-story {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .game-title {
+                font-size: 1.6rem;
+            }
+            
+            .stat-item {
+                min-width: 60px;
+                padding: 0.4rem 0.6rem;
+            }
+            
+            .stat-value {
+                font-size: 1.2rem;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            #catch-the-cat {
+                min-height: 40vh;
+                max-height: 50vh;
+            }
+        }
+
+        /* 烟花特效 */
+        .fireworks-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .firework {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            animation: firework-explode 1.5s ease-out forwards;
+        }
+
+        @keyframes firework-explode {
+            0% {
+                transform: translate(var(--startX), var(--startY)) scale(0);
+                opacity: 1;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--endX), var(--endY)) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* 猫咪风格加载动画 - 增强版 */
+        .loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--avocado-light) 0%, var(--avocado-medium) 100%);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        body.night-mode .loader {
+            background: linear-gradient(135deg, #0d1f0d 0%, #1a2f1a 100%);
+        }
+
+        .loader.active {
+            display: flex;
+        }
+
+        .cat-loader {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin-bottom: 2rem;
+        }
+
+        .cat-body {
+            width: 80px;
+            height: 60px;
+            background: var(--avocado-accent);
+            border-radius: 40px 40px 20px 20px;
+            position: absolute;
+            top: 30px;
+            left: 20px;
+            animation: cat-bounce 2s ease-in-out infinite;
+        }
+
+        body.night-mode .cat-body {
+            background: var(--night-accent);
+        }
+
+        .cat-head {
+            width: 60px;
+            height: 50px;
+            background: var(--avocado-accent);
+            border-radius: 30px 30px 20px 20px;
+            position: absolute;
+            top: 10px;
+            left: 30px;
+        }
+
+        body.night-mode .cat-head {
+            background: var(--night-accent);
+        }
+
+        .cat-ear {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 20px solid var(--avocado-accent);
+        }
+
+        body.night-mode .cat-ear {
+            border-bottom: 20px solid var(--night-accent);
+        }
+
+        .cat-ear-left {
+            top: -5px;
+            left: 10px;
+            transform: rotate(-10deg);
+        }
+
+        .cat-ear-right {
+            top: -5px;
+            right: 10px;
+            transform: rotate(10deg);
+        }
+
+        .cat-tail {
+            width: 30px;
+            height: 12px;
+            background: var(--avocado-accent);
+            position: absolute;
+            top: 45px;
+            right: 0;
+            border-radius: 0 6px 6px 0;
+            animation: tail-wag 1s ease-in-out infinite;
+            transform-origin: left center;
+        }
+
+        body.night-mode .cat-tail {
+            background: var(--night-accent);
+        }
+
+        .cat-paw {
+            width: 20px;
+            height: 12px;
+            background: var(--avocado-accent);
+            border-radius: 10px;
+            position: absolute;
+            bottom: -5px;
+            animation: paw-step 0.5s ease-in-out infinite alternate;
+        }
+
+        body.night-mode .cat-paw {
+            background: var(--night-accent);
+        }
+
+        .paw-left {
+            left: 15px;
+            animation-delay: 0.25s;
+        }
+
+        .paw-right {
+            right: 15px;
+        }
+
+        .dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--avocado-shadow);
+            border-radius: 50%;
+            animation: dot-move 2s linear infinite;
+        }
+
+        body.night-mode .dot {
+            background: var(--night-shadow);
+        }
+
+        .dot:nth-child(1) { top: 20px; left: 20px; animation-delay: 0s; }
+        .dot:nth-child(2) { top: 40px; right: 30px; animation-delay: 0.5s; }
+        .dot:nth-child(3) { bottom: 30px; left: 40px; animation-delay: 1s; }
+        .dot:nth-child(4) { top: 60px; right: 20px; animation-delay: 1.5s; }
+
+        @keyframes cat-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes tail-wag {
+            0%, 100% { transform: rotate(-10deg); }
+            50% { transform: rotate(10deg); }
+        }
+
+        @keyframes paw-step {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-5px); }
+        }
+
+        @keyframes dot-move {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .loader-text {
+            color: var(--text-dark);
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            min-height: 1.6em;
+        }
+
+        body.night-mode .loader-text {
+            color: var(--night-text);
+        }
+
+        .loader-subtext {
+            color: var(--text-light);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            text-align: center;
+            min-height: 1.2em;
+        }
+
+        body.night-mode .loader-subtext {
+            color: #a5d6a7;
+        }
+
+        /* 进度条样式 */
+        .progress-container {
+            width: 80%;
+            max-width: 400px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        body.night-mode .progress-container {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--avocado-accent), var(--avocado-shadow));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.night-mode .progress-bar {
+            background: linear-gradient(90deg, var(--night-accent), var(--night-shadow));
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* GitHub角标动画修复 */
+        .github-corner:hover .octo-arm {
+            animation: octocat-wave 560ms ease-in-out;
+        }
+
+        @keyframes octocat-wave {
+            0%, 100% { transform: rotate(0); }
+            20%, 60% { transform: rotate(-25deg); }
+            40%, 80% { transform: rotate(10deg); }
+        }
+
+        @media (max-width: 500px) {
+            .github-corner:hover .octo-arm {
+                animation: none;
+            }
+            .github-corner .octo-arm {
+                animation: octocat-wave 560ms ease-in-out;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主题切换按钮 -->
+    <div class="top-controls">
+        <button class="theme-btn" id="theme-btn">🌙</button>
+    </div>
+
+    <!-- 烟花特效容器 -->
+    <div class="fireworks-container" id="fireworks-container"></div>
+
+    <!-- 猫咪风格加载动画 -->
+    <div class="loader" id="loader">
+        <div class="cat-loader">
+            <div class="cat-head">
+                <div class="cat-ear cat-ear-left"></div>
+                <div class="cat-ear cat-ear-right"></div>
+            </div>
+            <div class="cat-body">
+                <div class="cat-tail"></div>
+                <div class="cat-paw paw-left"></div>
+                <div class="cat-paw paw-right"></div>
+            </div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <div class="loader-text" id="loader-text">小猫正在准备中...</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="loader-subtext" id="loader-subtext">请稍等，游戏马上开始！</div>
+    </div>
+
+    <!-- 动态背景 -->
+    <canvas id="dynamic-bg"></canvas>
+
+    <!-- GitHub角标 - 已修复位置 -->
+    <a href="https://juejin.cn/post/7575162322239979520" class="github-corner" aria-label="查看GitHub源码">
+        <svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true">
+            <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+            <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+            <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
+        </svg>
+    </a>
+
+    <!-- 页面内容 -->
+    <header class="game-header">
+        <h1 class="game-title" id="game-title">圈小猫</h1>
+        <p class="game-subtitle" id="game-subtitle">一款清新自然的益智游戏 - 在绿意盎然的花园中与小猫玩耍！</p>
+    </header>
+
+    <div id="game-container">
+        <div id="catch-the-cat"></div>
+        
+        <div class="game-controls">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="moves-count">0</div>
+                    <div class="stat-label" id="moves-label">步数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="time-count">00:00</div>
+                    <div class="stat-label" id="time-label">时间</div>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn" id="restart-btn">重新开始</button>
+                <button class="btn" id="cheat-btn">通关秘籍</button>
+            </div>
+        </div>
+        
+        <div class="game-story">
+            <h2 class="story-title" id="story-title">游戏剧情</h2>
+            <div class="story-content">
+                <p id="story-p1">欢迎来到绿意盎然的花园！这里住着一只活泼好动的小猫咪"小布丁"，它最喜欢在青草丛中追逐蝴蝶、玩耍嬉戏。</p>
+                <p id="story-p2">你的任务是在小布丁跑出花园之前，用可爱的栅栏围住它。小布丁非常聪明，它会寻找最快捷的路径奔向自由！</p>
+                <p id="story-p3">随着关卡的提升，花园会变得更加广阔，小布丁也会变得更加机灵。你能用最少的步数留住这只可爱的小猫咪吗？</p>
+            </div>
+            
+            <div class="instructions">
+                <h3 id="instructions-title">游戏规则</h3>
+                <ul>
+                    <li><strong id="goal-label">目标：</strong><span id="goal-text">用栅栏围住小猫咪，阻止它逃出花园网格</span></li>
+                    <li><strong id="operation-label">操作：</strong><span id="operation-text">点击空单元格放置树叶栅栏</span></li>
+                    <li><strong id="strategy-label">策略：</strong><span id="strategy-text">预判猫咪的移动路径，在关键位置放置栅栏</span></li>
+                    <li><strong id="challenge-label">挑战：</strong><span id="challenge-text">使用尽可能少的步数完成关卡</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="credit" id="credit">画面设计：南风不知我意</div>
+    </footer>
+
+    <script src="phaser.min.js"></script>
+    <script src="catch-the-cat.js"></script>
+    <script>
+        // 日夜模式切换
+        function toggleTheme() {
+            document.body.classList.toggle('night-mode');
+            const themeBtn = document.getElementById('theme-btn');
+            themeBtn.textContent = document.body.classList.contains('night-mode') ? '☀️' : '🌙';
+            
+            // 更新动态背景
+            if (window.bgAnimationId) {
+                cancelAnimationFrame(window.bgAnimationId);
+            }
+            initDynamicBackground();
+        }
+
+        // 高大上的烟花彩带庆祝效果
+        function createFireworks() {
+            const container = document.getElementById('fireworks-container');
+            container.innerHTML = '';
+            
+            // 创建彩色纸屑背景 - 增加三倍到300个
+            for (let i = 0; i < 300; i++) {
+                setTimeout(() => {
+                    createConfetti(container);
+                }, i * 10);
+            }
+            
+            // 创建多个烟花爆炸点 - 增加三倍到15个
+            const explosionPoints = [
+                { x: window.innerWidth * 0.1, y: window.innerHeight * 0.2 },
+                { x: window.innerWidth * 0.9, y: window.innerHeight * 0.3 },
+                { x: window.innerWidth * 0.2, y: window.innerHeight * 0.4 },
+                { x: window.innerWidth * 0.8, y: window.innerHeight * 0.5 },
+                { x: window.innerWidth * 0.3, y: window.innerHeight * 0.6 },
+                { x: window.innerWidth * 0.7, y: window.innerHeight * 0.2 },
+                { x: window.innerWidth * 0.4, y: window.innerHeight * 0.3 },
+                { x: window.innerWidth * 0.6, y: window.innerHeight * 0.4 },
+                { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 },
+                { x: window.innerWidth * 0.15, y: window.innerHeight * 0.7 },
+                { x: window.innerWidth * 0.85, y: window.innerHeight * 0.6 },
+                { x: window.innerWidth * 0.25, y: window.innerHeight * 0.8 },
+                { x: window.innerWidth * 0.75, y: window.innerHeight * 0.7 },
+                { x: window.innerWidth * 0.35, y: window.innerHeight * 0.9 },
+                { x: window.innerWidth * 0.65, y: window.innerHeight * 0.8 }
+            ];
+            
+            explosionPoints.forEach((point, index) => {
+                setTimeout(() => {
+                    createFireworkExplosion(point.x, point.y, container);
+                }, index * 200);
+            });
+            
+            // 创建飘落的彩带 - 增加三倍到40条
+            for (let i = 0; i < 40; i++) {
+                setTimeout(() => {
+                    createRibbon(container);
+                }, i * 50);
+            }
+            
+            // 创建闪烁的文字效果
+            setTimeout(() => {
+                createCelebrationText(container);
+            }, 500);
+        }
+
+        function createConfetti(container) {
+            const confetti = document.createElement('div');
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'];
+            
+            confetti.style.cssText = `
+                position: fixed;
+                width: ${Math.random() * 10 + 5}px;
+                height: ${Math.random() * 10 + 5}px;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                top: -20px;
+                left: ${Math.random() * 100}%;
+                opacity: ${Math.random() * 0.7 + 0.3};
+                border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+                animation: confetti-fall ${Math.random() * 3 + 2}s linear forwards;
+                pointer-events: none;
+                z-index: 1000;
+            `;
+            
+            container.appendChild(confetti);
+            
+            setTimeout(() => {
+                if (confetti.parentNode) {
+                    confetti.parentNode.removeChild(confetti);
+                }
+            }, 5000);
+        }
+
+        function createFireworkExplosion(x, y, container) {
+            const particles = 180;  // 增加三倍到180个粒子
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#ffffff'];
+            
+            for (let i = 0; i < particles; i++) {
+                const particle = document.createElement('div');
+                const angle = (Math.PI * 2 * i) / particles;
+                const distance = 100 + Math.random() * 150;  // 增加爆炸范围
+                const duration = 1.5 + Math.random() * 0.5;
+                const size = 4 + Math.random() * 3;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                particle.style.cssText = `
+                    position: fixed;
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: ${color};
+                    border-radius: 50%;
+                    left: ${x}px;
+                    top: ${y}px;
+                    pointer-events: none;
+                    box-shadow: 0 0 10px ${color};
+                    animation: firework-particle ${duration}s ease-out forwards;
+                    --angle: ${angle};
+                    --distance: ${distance}px;
+                    z-index: 1000;
+                `;
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, duration * 1000);
+            }
+        }
+
+        function createRibbon(container) {
+            const ribbon = document.createElement('div');
+            const colors = ['#ff6b6b', '#4ecdc4', '#feca57', '#ff9ff3', '#54a0ff'];
+            const rotation = Math.random() * 30 - 15;
+            
+            ribbon.style.cssText = `
+                position: fixed;
+                width: ${Math.random() * 40 + 20}px;
+                height: ${Math.random() * 6 + 3}px;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                top: -30px;
+                left: ${Math.random() * 100}%;
+                opacity: ${Math.random() * 0.7 + 0.3};
+                transform: rotate(${rotation}deg);
+                animation: ribbon-fall ${Math.random() * 4 + 3}s ease-in forwards;
+                pointer-events: none;
+                z-index: 1000;
+                border-radius: 2px;
+            `;
+            
+            container.appendChild(ribbon);
+            
+            setTimeout(() => {
+                if (ribbon.parentNode) {
+                    ribbon.parentNode.removeChild(ribbon);
+                }
+            }, 7000);
+        }
+
+        function createCelebrationText(container) {
+            const messages = ['恭喜!', '太棒了!', '完美!', '胜利!'];
+            
+            messages.forEach((message, index) => {
+                const text = document.createElement('div');
+                text.textContent = message;
+                text.style.cssText = `
+                    position: fixed;
+                    top: ${30 + index * 15}%;
+                    left: 50%;
+                    transform: translateX(-50%) scale(0);
+                    font-size: 3.5rem;
+                    font-weight: bold;
+                    color: #feca57;
+                    text-shadow: 2px 2px 0 #ff6b6b, 4px 4px 0 rgba(0,0,0,0.2);
+                    z-index: 1001;
+                    pointer-events: none;
+                    animation: celebration-text 1.5s ease-out forwards;
+                    animation-delay: ${index * 0.2}s;
+                    white-space: nowrap;
+                `;
+                
+                container.appendChild(text);
+                
+                setTimeout(() => {
+                    if (text.parentNode) {
+                        text.parentNode.removeChild(text);
+                    }
+                }, 4000);
+            });
+        }
+
+        // 添加CSS动画
+        if (!document.querySelector('#fireworks-styles')) {
+            const style = document.createElement('style');
+            style.id = 'fireworks-styles';
+            style.textContent = `
+                @keyframes confetti-fall {
+                    0% {
+                        transform: translateY(0) rotate(0deg);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translateY(100vh) rotate(360deg);
+                        opacity: 0;
+                    }
+                }
+                
+                @keyframes firework-particle {
+                    0% {
+                        transform: translate(0, 0) scale(1);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translate(
+                            calc(cos(var(--angle)) * var(--distance)),
+                            calc(sin(var(--angle)) * var(--distance))
+                        ) scale(0);
+                        opacity: 0;
+                    }
+                }
+                
+                @keyframes ribbon-fall {
+                    0% {
+                        transform: translateY(0) rotate(var(--rotation, 0deg));
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translateY(100vh) rotate(calc(var(--rotation, 0deg) + 180deg));
+                        opacity: 0;
+                    }
+                }
+                
+                @keyframes celebration-text {
+                    0% {
+                        transform: translateX(-50%) scale(0) rotate(-10deg);
+                        opacity: 0;
+                    }
+                    50% {
+                        transform: translateX(-50%) scale(1.1) rotate(0deg);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translateX(-50%) scale(1) rotate(0deg);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化主题按钮
+            document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+            
+            // 显示加载动画
+            const loader = document.getElementById('loader');
+            const progressBar = document.getElementById('progress-bar');
+            const loaderText = document.getElementById('loader-text');
+            const loaderSubtext = document.getElementById('loader-subtext');
+            loader.classList.add('active');
+            
+            // 初始化动态背景
+            initDynamicBackground();
+            
+            // 提示词数组
+            const progressMessages = [
+                { text: "小猫正在准备中...", subtext: "请稍等，游戏马上开始！" },
+                { text: "加载游戏资源...", subtext: "正在准备可爱的猫咪和花园..." },
+                { text: "初始化游戏界面...", subtext: "正在布置美丽的花园场景..." },
+                { text: "准备游戏逻辑...", subtext: "小猫咪正在热身..." },
+                { text: "加载音效和动画...", subtext: "添加猫咪的可爱叫声..." },
+                { text: "最终检查...", subtext: "马上就可以和小布丁玩耍了！" }
+            ];
+            
+            // 模拟加载进度
+            let progress = 0;
+            let currentMessageIndex = 0;
+            const progressInterval = setInterval(function() {
+                progress += Math.random() * 10;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(progressInterval);
+                    
+                    // 更新到最终提示
+                    loaderText.textContent = "加载完成！";
+                    loaderSubtext.textContent = "游戏即将开始...";
+                    
+                    setTimeout(function() {
+                        loader.classList.remove('active');
+                        
+                        // 初始化游戏
+                        window.game = new CatchTheCatGame({
+                            w: 11,
+                            h: 11,
+                            r: 20,
+                            backgroundColor: 0xF5FFFA,
+                            parent: 'catch-the-cat',
+                            statusBarAlign: 'center',
+                            credit: '南风不知我意'
+                        });
+                        
+                        // 初始化游戏统计
+                        initGameStats();
+                        
+                        // 初始化移动端触摸修复
+                        setTimeout(initMobileTouchFix, 1000);
+                        
+                    }, 800);
+                } else {
+                    progressBar.style.width = progress + '%';
+                    
+                    // 根据进度更新提示词
+                    const newMessageIndex = Math.floor(progress / (100 / progressMessages.length));
+                    if (newMessageIndex !== currentMessageIndex && newMessageIndex < progressMessages.length) {
+                        currentMessageIndex = newMessageIndex;
+                        loaderText.textContent = progressMessages[currentMessageIndex].text;
+                        loaderSubtext.textContent = progressMessages[currentMessageIndex].subtext;
+                    }
+                }
+            }, 150);
+        });
+
+        // 动态背景 - 修复特效
+        function initDynamicBackground() {
+            const canvas = document.getElementById('dynamic-bg');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置canvas尺寸
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 创建粒子
+            const particles = [];
+            const particleCount = document.body.classList.contains('night-mode') ? 30 : 60;
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 3 + 1,
+                    speedX: (Math.random() - 0.5) * 0.5,
+                    speedY: (Math.random() - 0.5) * 0.5,
+                    color: document.body.classList.contains('night-mode') ? 
+                        `rgba(${100 + Math.random() * 50}, ${150 + Math.random() * 50}, ${100 + Math.random() * 50}, ${0.2 + Math.random() * 0.2})` :
+                        `rgba(${136 + Math.random() * 50}, ${212 + Math.random() * 30}, ${171}, ${0.3 + Math.random() * 0.3})`
+                });
+            }
+            
+            // 动画循环
+            function animate() {
+                // 创建渐变背景
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                if (document.body.classList.contains('night-mode')) {
+                    gradient.addColorStop(0, 'rgba(13, 31, 13, 0.1)');
+                    gradient.addColorStop(1, 'rgba(42, 62, 42, 0.05)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(168, 230, 207, 0.3)');
+                    gradient.addColorStop(1, 'rgba(107, 196, 166, 0.2)');
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制连接线
+                ctx.strokeStyle = document.body.classList.contains('night-mode') ? 
+                    'rgba(76, 175, 147, 0.1)' : 'rgba(76, 175, 147, 0.15)';
+                ctx.lineWidth = 0.8;
+                
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 150) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                
+                // 更新和绘制粒子
+                particles.forEach(particle => {
+                    particle.x += particle.speedX;
+                    particle.y += particle.speedY;
+                    
+                    // 边界反弹
+                    if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1;
+                    if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1;
+                    
+                    // 绘制粒子光晕
+                    const gradient = ctx.createRadialGradient(
+                        particle.x, particle.y, 0,
+                        particle.x, particle.y, particle.size * 2
+                    );
+                    gradient.addColorStop(0, particle.color);
+                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 绘制粒子核心
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                window.bgAnimationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        // 游戏统计 - 修复移动端步数记录
+        function initGameStats() {
+            let moves = 0;
+            let seconds = 0;
+            let timer;
+            
+            const movesElement = document.getElementById('moves-count');
+            const timeElement = document.getElementById('time-count');
+            const restartBtn = document.getElementById('restart-btn');
+            const cheatBtn = document.getElementById('cheat-btn');
+            const gameContainer = document.getElementById('catch-the-cat');
+            
+            // 更新步数 - 设为全局函数
+            window.updateMoves = function() {
+                moves++;
+                movesElement.textContent = moves;
+                
+                console.log('步数更新:', moves);
+            };
+            
+            // 更新时间
+            function startTimer() {
+                clearInterval(timer);
+                seconds = 0;
+                updateTimeDisplay();
+                
+                timer = setInterval(function() {
+                    seconds++;
+                    updateTimeDisplay();
+                }, 1000);
+            }
+            
+            function updateTimeDisplay() {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                timeElement.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            // 重新开始
+            restartBtn.addEventListener('click', function() {
+                moves = 0;
+                movesElement.textContent = moves;
+                startTimer();
+                
+                // 这里应该重新开始游戏
+                if (window.game && typeof window.game.restart === 'function') {
+                    window.game.restart();
+                }
+            });
+            
+            // 通关秘籍按钮
+            cheatBtn.addEventListener('click', function() {
+                const cheatTips = [
+                    "🎯 通关秘籍 🎯",
+                    "",
+                    "1. 观察猫咪的移动模式，它总是选择最短路路径",
+                    "2. 在猫咪可能逃跑的方向提前布置栅栏",
+                    "3. 优先封锁地图边缘的出口位置",
+                    "4. 利用角落和边界来限制猫咪的活动空间",
+                    "5. 注意猫咪的初始位置，从那里开始包围",
+                    "",
+                    "💡 小贴士：耐心观察，步步为营！"
+                ].join('\n');
+                
+                alert(cheatTips);
+            });
+            
+            // 初始化
+            startTimer();
+            
+            // 监听游戏容器的点击事件（桌面端）
+            gameContainer.addEventListener('click', function(e) {
+                // 只有当点击的是游戏画布内部时才记录步数
+                if (e.target === gameContainer || e.target.tagName === 'CANVAS') {
+                    // 只在桌面端记录步数，移动端由触摸事件处理
+                    if (!window.isMobileDevice) {
+                        window.updateMoves();
+                        console.log('桌面端点击，步数+1');
+                    }
+                }
+            });
+            
+            // 游戏状态监控 - 检测胜利和失败
+            let lastGameState = '';
+            let gameStateCheckInterval;
+            
+            function startGameStateMonitoring() {
+                gameStateCheckInterval = setInterval(function() {
+                    const gameContainer = document.getElementById('catch-the-cat');
+                    const textElements = gameContainer.querySelectorAll('*');
+                    let currentStatus = '';
+                    
+                    // 查找包含游戏状态文本的元素
+                    for (let i = 0; i < textElements.length; i++) {
+                        const element = textElements[i];
+                        const text = element.textContent || '';
+                        if ((text.includes('赢了') || text.includes('你赢了') || text.includes('win') || text.includes('无路可走')) && 
+                            !text.includes('重新开局') && !text.includes('重新开始')) {
+                            currentStatus = 'win';
+                            break;
+                        } else if ((text.includes('输了') || text.includes('你输了') || text.includes('lose') || text.includes('地图边缘')) && 
+                                   !text.includes('重新开局') && !text.includes('重新开始')) {
+                            currentStatus = 'lose';
+                            break;
+                        }
+                    }
+                    
+                    // 检测状态变化
+                    if (currentStatus !== lastGameState) {
+                        if (currentStatus === 'win') {
+                            console.log('检测到游戏胜利！');
+                            // 播放烟花特效
+                            createFireworks();
+                            // 显示胜利消息
+                            setTimeout(() => {
+                                alert('🎉 恭喜！你成功围住了小布丁！\n\n步数: ' + moves + '\n时间: ' + timeElement.textContent);
+                            }, 800);
+                        } else if (currentStatus === 'lose') {
+                            console.log('检测到游戏失败');
+                            setTimeout(() => {
+                                alert('😿 小布丁逃走了，再试一次吧！');
+                            }, 500);
+                        }
+                        lastGameState = currentStatus;
+                    }
+                }, 500);
+            }
+            
+            // 开始监控游戏状态
+            setTimeout(startGameStateMonitoring, 2000);
+        }
+
+        // 修复移动端触摸事件，防止重复计数
+        function initMobileTouchFix() {
+            const canvas = document.querySelector('#catch-the-cat canvas');
+            const gameContainer = document.getElementById('catch-the-cat');
+            
+            if (!canvas) {
+                console.log('画布未找到，稍后重试...');
+                setTimeout(initMobileTouchFix, 500);
+                return;
+            }
+            
+            console.log('初始化移动端触摸修复');
+            
+            // 检测是否为移动设备
+            window.isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            canvas.style.touchAction = 'none';
+            
+            let isProcessing = false;
+            
+            // 触摸开始事件
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                
+                if (isProcessing) return;
+                isProcessing = true;
+                
+                const touch = e.touches[0];
+                console.log('触摸开始', touch.clientX, touch.clientY);
+                
+                // 只在移动端触发步数更新
+                if (window.isMobileDevice && typeof window.updateMoves === 'function') {
+                    window.updateMoves();
+                    console.log('移动端步数已更新');
+                }
+                
+                // 模拟点击事件，确保游戏逻辑也能收到
+                const clickEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                
+                // 触发游戏容器的点击事件
+                gameContainer.dispatchEvent(clickEvent);
+                
+                setTimeout(() => {
+                    isProcessing = false;
+                }, 100);
+                
+            }, { passive: false });
+            
+            canvas.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+            
+            canvas.addEventListener('touchend', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+        }
+    </script>
+</body>
+</html>
